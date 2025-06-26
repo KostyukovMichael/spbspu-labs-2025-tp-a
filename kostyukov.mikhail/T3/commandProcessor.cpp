@@ -1,23 +1,28 @@
 #include "commandProcessor.hpp"
 
-#include <functional>
-
 #include "commands.hpp"
 
-namespace kostyukov
+kostyukov::CommandProcessor::CommandProcessor(PolygonContainer& polygons, std::istream& in, std::ostream& out):
+  polygons_(polygons),
+  in_(in),
+  out_(out)
 {
-  CommandProcessor::CommandProcessor(const std::vector< Polygon >& polygons, std::istream& in, std::ostream& out)
-  {
-    commands_["AREA"] = std::bind(area, std::ref(in), std::ref(out), std::cref(polygons));
-    commands_["MAX"] = std::bind(max, std::ref(in), std::ref(out), std::cref(polygons));
-    commands_["MIN"] = std::bind(min, std::ref(in), std::ref(out), std::cref(polygons));
-    commands_["COUNT"] = std::bind(count, std::ref(in), std::ref(out), std::cref(polygons));
-    commands_["PERMS"] = std::bind(permsCount, std::ref(in), std::ref(out), std::cref(polygons));
-    commands_["RIGHTSHAPES"] = std::bind(rightShapesCount, std::ref(out), std::cref(polygons));
-  }
+  add("AREA", area);
+  add("MAX", max);
+  add("MIN", min);
+  add("COUNT", count);
+  add("PERMS", permsCount);
+  commands_["RIGHTSHAPES"] = std::bind(rightShapesCount, std::ref(out_), std::cref(polygons));
+}
 
-  const std::map< std::string, std::function< void() > >& CommandProcessor::getCommands() const
-  {
-    return commands_;
-  }
+void kostyukov::CommandProcessor::add(const std::string& commandName, CommandFunc func)
+{
+  commands_[commandName] = std::bind(func, std::ref(in_), std::ref(out_), std::cref(polygons_));
+  return;
+}
+
+void kostyukov::CommandProcessor::process(const std::string& commandName)
+{
+  commands_.at(commandName)();
+  return;
 }
